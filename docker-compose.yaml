@@ -58,8 +58,8 @@ services:
     container_name: "invoke_lamdas"
     volumes:
       - "./invoke_lambdas/invoke_lambdas_script.sh:/invoke_lambdas_script.sh"
-      - "./output/first_lambda_url.txt:/mnt/outputs/first_lambda_url.txt"
-      - "./output/second_lambda_url.txt:/mnt/outputs/second_lambda_url.txt"
+      - "./output/first_lambda_url.txt:/mnt/output/first_lambda_url.txt"
+      - "./output/second_lambda_url.txt:/mnt/output/second_lambda_url.txt"
     dns:
       # Set the DNS server to the localstack container
       - 10.0.2.20
