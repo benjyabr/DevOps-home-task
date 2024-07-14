@@ -1,3 +1,19 @@
+# Benjy's addons
+
+Hey, this is my demo project utilizing lambdas invoked by aws api gateway resources over localstack.
+to make this work, make sure you have docker-compose 1.29+, create a .env file in the root of the project with the variable: LOCALSTACK_AUTH_TOKEN="<LOCALSTACK_ID>".
+Then you may run:
+  docker-compose up --build
+
+From my understanding, I only needed to print out the output of the secret value itself that is inside the second lambda, so I don't print out the rest of the output from the responses of both, just trigger them. you can see the commands I use in ./invoke_lambdas/invoke_lambdas_script.sh.
+
+** I noticed after completing all of the task that I needed to invoke the lambda at it's / path. I didn't do that and I invoked each function at a customized path. I couldn't fix this in time before submission.
+
+Thanks
+Benjy
+
+
+
 # AWS Lambda Deployment Guide for Interns
 
 Welcome to your deployment task! This guide will walk you through the process of deploying AWS Lambda functions using Docker images with Terraform on LocalStack, and how to connect them to an API Gateway.
