@@ -1,0 +1,73 @@
+version: "3.8"
+
+services:
+  localstack:
+    container_name: "localstack-main"
+    image: localstack/localstack-pro
+    # Created a healthcheck to run given command to detect when localstack is running
+    healthcheck:
+      test: >-
+        awslocal lambda list-functions
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "4566:4566"            # LocalStack Gateway
+      - "4510-4559:4510-4559"  # external services port range
+      - "443:443"              # LocalStack HTTPS Gateway
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?}  # Aquired via the .env file (ignored by git)
+      - SERVICES= lambda,apigateway,iam,logs,ec2,cloudwatch,sts
+      - DEBUG=1
+      - PERSISTENCE=${PERSISTENCE:-0}
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    networks:
+      localstack:
+        ipv4_address: 10.0.2.20
+
+  terraform_apply:
+    depends_on:
+      localstack:
+        condition: service_healthy # Run only after localstack is healthy
+    container_name: "terraform_apply"
+    image: hashicorp/terraform:1.5.7
+    working_dir: /mnt/terraform
+    entrypoint: ["/mnt/terraform/terraform_apply/terraform_apply_entrypoint.sh"]
+    environment:
+      - DEBUG=1
+    volumes:
+      - "./:/mnt/terraform"
+    # Set the DNS server to the localstack container and also public DNS for terraform provider download during init
+    dns:
+      - 10.0.2.20
+      - 1.1.1.1
+    networks:
+      - localstack
+
+  invoke_lambdas:
+    depends_on:
+      terraform_apply:
+        # Run only when terraform_apply is finished
+        condition: service_completed_successfully
+    build:
+      context: .
+      #build an image based on this dockerfile, you need to add --build to the up command
+      dockerfile: "./invoke_lambdas/invoke_lambdas.Dockerfile"
+    container_name: "invoke_lamdas"
+    volumes:
+      - "./invoke_lambdas/invoke_lambdas_script.sh:/invoke_lambdas_script.sh"
+      - "./output/first_lambda_url.txt:/mnt/outputs/first_lambda_url.txt"
+      - "./output/second_lambda_url.txt:/mnt/outputs/second_lambda_url.txt"
+    dns:
+      # Set the DNS server to the localstack container
+      - 10.0.2.20
+    networks:
+      - localstack
+
+networks:
+  localstack:
+    ipam:
+      config:
+        - subnet: 10.0.2.0/24
